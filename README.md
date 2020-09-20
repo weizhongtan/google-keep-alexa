@@ -1,2 +1,2 @@
 # shopping-list-alexa
-Google keep alexa skill
+Alexa skill to add items to a shopping list stored in Google Keep
