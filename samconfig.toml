@@ -6,5 +6,5 @@ stack_name = "shopping-list"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-q22rxlo7ueii"
 s3_prefix = "shopping-list"
 region = "eu-west-1"
-confirm_changeset = true
+confirm_changeset = false
 capabilities = "CAPABILITY_IAM"

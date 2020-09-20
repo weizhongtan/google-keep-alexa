@@ -15,6 +15,15 @@ from ask_sdk_model import Response
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+username = os.environ.get('AUTH_USERNAME')
+password = os.environ.get('AUTH_PASSWORD')
+note_id = os.environ.get('NOTE_ID')
+
+keep = gkeepapi.Keep()
+logger.info('start logged in')
+keep.login(username, password)
+logger.info('end logged in')
+
 
 class LaunchRequestHandler(AbstractRequestHandler):
     """Handler for Skill Launch."""
@@ -43,17 +52,19 @@ class AddItemIntentHandler(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
-        username = os.environ.get('AUTH_USERNAME')
-        password = os.environ.get('AUTH_PASSWORD')
-        note_id = os.environ.get('NOTE_ID')
-
-        keep = gkeepapi.Keep()
-        success = keep.login(username, password)
+        item = ask_utils.get_slot_value(handler_input, 'item')
+        if "shopping list" in item:
+            return (
+                handler_input.response_builder
+                .speak("you must specify an item")
+                .response
+            )
 
         glist = keep.get(note_id)
-        item = handler_input.request_envelope.request.intent.slots['item'].value
         glist.add(item, False, gkeepapi.node.NewListItemPlacementValue.Bottom)
+        logger.info('start sync')
         keep.sync()
+        logger.info('end sync')
 
         return (
             handler_input.response_builder
