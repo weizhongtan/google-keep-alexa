@@ -51,12 +51,13 @@ class AddItemIntentHandler(AbstractRequestHandler):
         success = keep.login(username, password)
 
         glist = keep.get(note_id)
-        glist.add('test', False, gkeepapi.node.NewListItemPlacementValue.Bottom)
+        item = handler_input.request_envelope.request.intent.slots['item'].value
+        glist.add(item, False, gkeepapi.node.NewListItemPlacementValue.Bottom)
         keep.sync()
 
         return (
             handler_input.response_builder
-            .speak('created item successfully')
+            .speak('added %s to shopping list'%(item))
             # .ask("add a reprompt if you want to keep the session open for the user to respond")
             .response
         )
