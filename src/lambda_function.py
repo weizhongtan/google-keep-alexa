@@ -2,6 +2,7 @@ import logging
 # import gettext
 import gkeepapi
 import os
+import boto3
 
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import (
@@ -15,9 +16,14 @@ from ask_sdk_model import Response
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-username = os.environ.get('AUTH_USERNAME')
-password = os.environ.get('AUTH_PASSWORD')
-note_id = os.environ.get('NOTE_ID')
+client = boto3.client('ssm')
+
+params = client.get_parameters_by_path(
+    Path="/shopping-list-alexa", Recursive=True, WithDecryption=True
+)["Parameters"]
+username = next(item for item in params if item["Name"] == "/shopping-list-alexa/auth-username")['Value']
+password = next(item for item in params if item["Name"] == "/shopping-list-alexa/auth-password")['Value']
+note_id = next(item for item in params if item["Name"] == "/shopping-list-alexa/note-id")['Value']
 
 keep = gkeepapi.Keep()
 logger.info('start logged in')

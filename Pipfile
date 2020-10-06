@@ -9,6 +9,7 @@ pylint = "*"
 [packages]
 gkeepapi = "*"
 ask-sdk-core = "*"
+boto3 = "*"
 
 [requires]
 python_version = "3.8"

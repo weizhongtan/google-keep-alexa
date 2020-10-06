@@ -10,14 +10,6 @@ Globals:
   Function:
     Timeout: 30
 
-Parameters:
-  AuthUsername:
-    Type: String
-  AuthPassword:
-    Type: String
-  NoteId:
-    Type: String
-
 Resources:
   ShoppingListFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -25,17 +17,19 @@ Resources:
       CodeUri: src/
       Handler: lambda_function.handler
       Runtime: python3.8
+      Policies:
+        - Version: '2012-10-17' # Policy Document
+          Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter*
+                - ssm:GetParametersByPath
+              Resource: 'arn:aws:ssm:*:148243745686:parameter/*'
       Events:
         AlexaSkillEvent:
           Type: AlexaSkill # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             SkillId: amzn1.ask.skill.a0f71ee2-50a6-4802-968a-b903fa0de09b
-      Environment:
-        Variables:
-          AUTH_USERNAME: !Ref AuthUsername
-          AUTH_PASSWORD: !Ref AuthPassword
-          NOTE_ID: !Ref NoteId
-
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
