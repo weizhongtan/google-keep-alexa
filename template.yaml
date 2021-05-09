@@ -24,7 +24,8 @@ Resources:
               Action:
                 - ssm:GetParameter*
                 - ssm:GetParametersByPath
-              Resource: 'arn:aws:ssm:*:148243745686:parameter/*'
+                - ssm:PutParameter
+              Resource: 'arn:aws:ssm:*:148243745686:parameter/shopping-list-alexa*'
       Events:
         AlexaSkillEvent:
           Type: AlexaSkill # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api

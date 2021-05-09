@@ -16,19 +16,51 @@ from ask_sdk_model import Response
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-client = boto3.client('ssm')
+def get_param_name(name):
+    parameter_prefix = 'shopping-list-alexa'
+    return f'/{parameter_prefix}/{name}'
 
+client = boto3.client('ssm')
 params = client.get_parameters_by_path(
     Path="/shopping-list-alexa", Recursive=True, WithDecryption=True
 )["Parameters"]
-username = next(item for item in params if item["Name"] == "/shopping-list-alexa/auth-username")['Value']
-password = next(item for item in params if item["Name"] == "/shopping-list-alexa/auth-password")['Value']
-note_id = next(item for item in params if item["Name"] == "/shopping-list-alexa/note-id")['Value']
+username = next(item for item in params if item["Name"] == get_param_name("auth-username"))['Value']
+note_id = next(item for item in params if item["Name"] == get_param_name("note-id"))['Value']
 
 keep = gkeepapi.Keep()
-logger.info('start logged in')
-keep.login(username, password)
-logger.info('end logged in')
+
+# first, attempt to resume using master token
+try:
+    token = client.get_parameter(
+        Name=get_param_name('master-token'), WithDecryption=True
+    )
+    if token:
+        logger.info('found master token, attempting to resume')
+        # TODO: this operation takes ~5s
+        keep.resume(username, token['Parameter']['Value'])
+    else:
+        logger.info('master token is not truthy')
+        raise Exception('master token does not exist')
+except:
+    logger.info('failed to use master token, re-authenticating')
+    password = next(item for item in params if item["Name"] == get_param_name("auth-password"))['Value']
+
+    logger.info('logged in START')
+    keep.login(username, password)
+    logger.info('logged in END')
+
+    logger.info('store master token START')
+    token = keep.getMasterToken()
+    client.put_parameter(
+        Name=get_param_name('master-token'),
+        Description='Cached token for Google Keep authentication',
+        Value=token,
+        Type='SecureString',
+        Overwrite=True
+    )
+    logger.info('store master token END')
+
+# keep should be ready to use now...
 
 
 class LaunchRequestHandler(AbstractRequestHandler):
@@ -68,9 +100,9 @@ class AddItemIntentHandler(AbstractRequestHandler):
 
         glist = keep.get(note_id)
         glist.add(item, False, gkeepapi.node.NewListItemPlacementValue.Bottom)
-        logger.info('start sync')
+        logger.info('sync START')
         keep.sync()
-        logger.info('end sync')
+        logger.info('sync END')
 
         return (
             handler_input.response_builder
